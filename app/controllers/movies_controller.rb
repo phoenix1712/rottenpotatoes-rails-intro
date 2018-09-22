@@ -12,15 +12,27 @@ class MoviesController < ApplicationController
 
   def index
     @sort_by = params[:sort]
+    @ratings = params[:ratings] 
+    if @ratings.nil?
+      ratings = Movie.ratings 
+    else
+      ratings = @ratings.keys
+    end
+    
+    @all_ratings = Movie.ratings.inject(Hash.new) do |all_ratings, rating|
+          all_ratings[rating] = @ratings.nil? ? true : @ratings.has_key?(rating) 
+          all_ratings
+    end
+    
     if !@sort_by.nil?
       begin
-        @movies = Movie.order("#{@sort_by} ASC").all
+        @movies = Movie.where('rating in (?)', ratings).order("#{@sort_by} ASC")
       rescue ActiveRecord::StatementInvalid
         flash[:warning] = "Movies cannot be sorted by #{@sort_by}."
-        @movies = Movie.all
+        @movies = Movie.where('rating in (?)', ratings)
       end
     else
-      @movies = Movie.all
+      @movies = Movie.where('rating in (?)', ratings)
     end
   end
 
